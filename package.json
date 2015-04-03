@@ -1,0 +1,35 @@
+{
+  "name": "TypeScript-Gulp-Browserify-Boilerplate",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/codeBelt/TypeScript-Gulp-Browserify-Boilerplate.git"
+  },
+  "keywords": [
+    "typescript",
+    "gulp",
+    "browserify",
+    "boilerplate",
+    "bower"
+  ],
+  "author": "codeBelt",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/codeBelt/TypeScript-Gulp-Browserify-Boilerplate/issues"
+  },
+  "homepage": "https://github.com/codeBelt/TypeScript-Gulp-Browserify-Boilerplate",
+    "devDependencies": {
+        "browserify": "^9.0.3",
+        "gulp": "^3.8.11",
+        "vinyl-source-stream": "^1.1.0",
+        "gulp-typescript": "^2.5.0",
+        "typescript": "^1.4.1"
+    },
+    "dependencies": {
+    }
+}
