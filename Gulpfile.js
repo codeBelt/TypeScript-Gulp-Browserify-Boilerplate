@@ -4,7 +4,6 @@
 
 var gulp = require('gulp');
 var typescript = require('gulp-typescript');
-var browserify = require('browserify');
 var transform = require('vinyl-transform');
 var sourcemaps = require('gulp-sourcemaps');
 var size = require('gulp-size');
@@ -25,6 +24,13 @@ var copy = require("gulp-copy");
 var runSequence = require('run-sequence');
 var header = require('gulp-header');
 var mochaPhantomJS = require('gulp-mocha-phantomjs');
+
+var source = require('vinyl-source-stream');
+var browserify = require('browserify');
+var tsify = require('tsify');
+
+
+
 
 
 var DEV = 'development';
@@ -52,6 +58,11 @@ var banner = [
     ' */',
     ''].join('\n');
 
+
+
+
+
+
 gulp.task("external", function() {
     var paths = [];
 
@@ -72,6 +83,20 @@ gulp.task("external", function() {
         // Save that file to the appropriate location.
         .pipe(gulp.dest(APPS_DIST_DIR + "../lib/"));
 });
+
+gulp.task("concat", function() {
+    var paths = [
+        outputDir + 'assets/scripts/templates.js',
+        outputDir + 'assets/scripts/main.js'
+    ];
+
+    return gulp.src(paths)
+        .pipe(concat("main.js"))
+        .pipe(gulpIf(env === PROD, uglify()))
+        .pipe(gulp.dest(outputDir + 'assets/scripts/'));
+});
+
+
 
 
 function handleError(err) {
@@ -101,7 +126,7 @@ gulp.task('browserify', function () {
         .pipe(rename('main.min.js'))
         //.pipe(header(banner, {pkg: pkg}))
         .pipe(gulp.dest(outputDir +'assets/scripts/'))
-        .pipe(size());
+    //.pipe(size());
 });
 
 gulp.task('docs', function() {
@@ -114,16 +139,31 @@ gulp.task('docs', function() {
         .pipe(gulp.dest(docsDir))
 });
 
+
+/**
+ * Clean task
+ */
 gulp.task('clean', function() {
     return gulp.src([outputDir, docsDir])
         .pipe(clean());
 });
 
+var merge = require('merge-stream');
+
 gulp.task('copy', function() {
-    return gulp.src([
+    var media = gulp.src(srcDir + 'assets/media/**/*')
+        .pipe(gulp.dest(outputDir + 'assets/media/'));
+
+    var styles = gulp.src(srcDir + 'assets/styles/**/*')
+        .pipe(gulp.dest(outputDir + 'assets/styles/'));
+
+    var root = gulp.src([
+        srcDir + 'favicon.ico',
         srcDir + 'index.html'
     ])
-        .pipe(gulp.dest(outputDir))
+        .pipe(gulp.dest(outputDir));
+
+    return merge(media, styles, root);
 });
 
 gulp.task('templates', function () {
@@ -131,14 +171,23 @@ gulp.task('templates', function () {
         .pipe(handlebars())
         .pipe(wrap('Handlebars.template(<%= contents %>)'))
         .pipe(declare({
-            namespace: 'JST.templates',
-            noRedeclare: true, // Avoid duplicate declarations
-            processName: function(filePath) {
-                return filePath;
+            amd: ['handlebars'],
+            namespace: 'JST',
+            // Registers all files that start with '_' as a partial.
+            partialRegex: /^_/,
+            // Shortens the file path for the templates.
+            processName: function (filePath) {  // input:  src/templates/_header.hbs
+                                                // output: templates/_header
+                return filePath.slice(filePath.indexOf('templates'), filePath.lastIndexOf('.'));
+            },
+            // Shortens the file path for the partials.
+            processPartialName: function (filePath) {   // input:  src/templates/_header.hbs
+                                                        // output: templates/_header
+                return filePath.slice(filePath.indexOf('templates'), filePath.lastIndexOf('.'));
             }
         }))
         .pipe(concat('templates.js'))
-        .pipe(gulp.dest(outputDir + 'scripts/'))
+        .pipe(gulp.dest(outputDir + 'assets/scripts/'))
         .pipe(connect.reload())
 });
 
@@ -149,6 +198,8 @@ gulp.task('lint', function() {
         .pipe(jshint())
         .pipe(jshint.reporter('default'));
 });
+
+
 
 //gulp.task('scripts', function() {
 //    return gulp.src(srcDir + 'assets/scripts/main.js')
@@ -181,6 +232,7 @@ gulp.task('sass', function() {
 gulp.task('watch', function() {
     gulp.watch(srcDir + 'templates/**/*.hbs', ['templates']);
     gulp.watch(srcDir + 'assets/scripts/**/*.js', ['scripts']);
+    gulp.watch(srcDir + 'assets/scripts/**/*.ts', ['ts']);
     gulp.watch(srcDir + 'assets/sass/**/*.scss', ['sass']);
 });
 
@@ -193,7 +245,6 @@ gulp.task('connect', function () {
     });
 });
 
-
 gulp.task('open', function(){
     var options = {
         url: 'http://localhost:8001'
@@ -202,23 +253,36 @@ gulp.task('open', function(){
         .pipe(open('<%file.path%>', options));
 });
 
-gulp.task('ts', function() {
-    return gulp.src([srcDir + 'assets/scripts/**/*.ts'])
-        .pipe(typescript({
-            module: 'commonjs',
-            removeComments: false
-        }))
-        .pipe(gulp.dest(outputDir +'assets/scripts/'))
-        .pipe(size());
-});
+//gulp.task('ts', function() {
+//    return gulp.src([srcDir + 'assets/scripts/**/*.ts'])
+//        .pipe(typescript({
+//            module: 'commonjs',
+//            removeComments: false
+//        }))
+//        .pipe(gulp.dest(outputDir +'assets/scripts/'))
+//        .pipe(size());
+//});
 
+
+gulp.task('ts', function() {
+    var bundler = browserify({
+        debug: false
+    })
+        .add(srcDir + 'assets/scripts/AppBootstrap.ts')
+        .plugin(tsify);
+
+    return bundler.bundle()
+        .pipe(source('main.js'))
+        .pipe(gulp.dest(outputDir + 'assets/scripts/'))
+});
 
 gulp.task('default', function() {
     runSequence(
         ['clean'],
-        ['ts']
+        ['templates', 'ts', 'sass', 'copy'],
+        ['concat'],
         //['lint', 'browserify', 'templates', 'sass', 'copy'],
-        //['watch', 'connect', 'open']
+        ['watch', 'connect', 'open']
     );
 });
 

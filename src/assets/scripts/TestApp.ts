@@ -2,15 +2,15 @@
 ///<reference path='_declare/jquery.d.ts'/>
 ///<reference path='_declare/lodash.d.ts'/>
 
-/// <amd-dependency path="hbs!templates/topbar/TopNavigationTemplate" />
-/// <amd-dependency path="hbs!templates/login/LoginTemplate" />
-declare var require:(moduleId:string) => any;
-var TopNavigationTemplate:Function = require('hbs!templates/topbar/TopNavigationTemplate');
-var LoginTemplate:Function = require('hbs!templates/login/LoginTemplate');
+// <amd-dependency path="hbs!templates/topbar/TopNavigationTemplate" />
+// <amd-dependency path="hbs!templates/login/LoginTemplate" />
+//declare var require:(moduleId:string) => any;
+//var TopNavigationTemplate:Function = require('hbs!templates/topbar/TopNavigationTemplate');
+//var LoginTemplate:Function = require('hbs!templates/login/LoginTemplate');
 
-import TemplateFactory = require("util/TemplateFactory");
-import Base = require("view/Base");
-import AnotherClass = require("view/AnotherClass");
+import TemplateFactory = require("./util/TemplateFactory");
+import Base = require("./view/Base");
+import AnotherClass = require("./view/AnotherClass");
 import _ = require("lodash");
 
 /**
@@ -33,16 +33,20 @@ class TestApp extends Base {
      * @overridden Base.createChildren
      */
     public createChildren():void {
-        var template:string = TopNavigationTemplate();
-        this.addChild(template);
+        //var template:string = TopNavigationTemplate();
+        //this.addChild(template);
 
-        template = LoginTemplate({title: this._title});
-        this.addChild(template);
+        //template = LoginTemplate({title: this._title});
+        //this.addChild(template);
 
         this._anotherClass = new AnotherClass();
         this._anotherClass.sayHi();
         
         console.log("_", _);
+
+        if(1==2){
+
+        }
     }
 
 }
